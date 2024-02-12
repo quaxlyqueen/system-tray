@@ -2,8 +2,8 @@
 A system tray written in Python for the GUI.
 
 # Installation:
-`git clone https://github.com/quaxlyqueen/tray`<br>
-`cd tray`<br>
+`git clone https://github.com/quaxlyqueen/system-tray`<br>
+`cd system-tray`<br>
 `sudo ./install`<br>
 
 # Uninstall:
@@ -16,40 +16,40 @@ INTERACTION:
 - [ ] Bluetooth toggle
     - [ ] Bluetooth toggle
 - [ ] Airplane toggle
-- [ ] Brightness slider
-- [ ] Volume slider
+- [x] Brightness slider
+- [x] Volume slider
 - [ ] Power dropdown
     - [ ] Shutdown
-    - [ ] Restart
+    - [x] Restart
     - [ ] Sign Out
 - [ ] Focus mode (TBD)
 
 FUNCTIONALITY:
 - [ ] Wi-Fi
-    - [ ] On/Off
+    - [x] On/Off
     - [ ] Change connection
     - [ ] Open in Settings (TBD)
 - [ ] Bluetooth
-    - [ ] On/Off
+    - [x] On/Off
     - [ ] Change connection
     - [ ] Open in Settings (TBD)
 - [ ] Airplane mode
     - [ ] On/Off
-- [ ] Brightness
-    - [ ] Click to set
-    - [ ] Drag to set
-    - [ ] Dynamically updates visual
-- [ ] Volume
-    - [ ] Click to set
-    - [ ] Drag to set
-    - [ ] Dynamically updates visual
+- [x] Brightness
+    - [x] Click to set
+    - [x] Drag to set
+    - [x] Dynamically updates visual
+- [x] Volume
+    - [x] Click to set
+    - [x] Drag to set
+    - [x] Dynamically updates visual
 - [ ] Power
     - [ ] Shutdown button
-    - [ ] Restart button
+    - [x] Restart button
     - [ ] Sign Out button
 
 GUI:
-- [ ] Add icon support
+- [x] Add icon support
 - [ ] Add animation support
 - [x] Add theme support
 
