@@ -2,8 +2,13 @@ import customtkinter as ctk
 import re
 import os
 
+# default colors
+base = '#262940'
+accent = '#4D5382'
+hover = '#C6CAED'
+
 class Button(ctk.CTkButton):
-    def __init__(self, root, text, command, row, column, columnspan, sticky):
+    def __init__(self, root, text, type, command, row, column, columnspan, sticky):
         super().__init__(
                 root,
                 text = text,
@@ -18,10 +23,22 @@ class Button(ctk.CTkButton):
             )
 
         self.grid(row=row, column=column, ipadx=10, ipady=10, columnspan=columnspan, sticky=sticky)
-        self.bind('<Enter>', lambda e: self.configure(fg_color=hover))
-        self.bind('<Enter>', lambda e: self.configure(text_color=base))
-        self.bind('<Leave>', lambda e: self.configure(fg_color=base))
-        self.bind('<Leave>', lambda e: self.configure(text_color=hover))
+        self.set_value(type)
+
+    def set_value(self, type):
+        home = os.path.expanduser('~')
+        if os.path.exists(home + '/.config/status/' + type):
+            self.bind('<Enter>', lambda e: self.configure(fg_color=hover))
+            self.bind('<Enter>', lambda e: self.configure(text_color=base))
+            self.bind('<Leave>', lambda e: self.configure(fg_color=base))
+            self.bind('<Leave>', lambda e: self.configure(text_color=hover))
+        else:
+            self.configure(fg_color = hover)
+            self.configure(text_color = base)
+            self.bind('<Enter>', lambda e: self.configure(fg_color=base))
+            self.bind('<Enter>', lambda e: self.configure(text_color=hover))
+            self.bind('<Leave>', lambda e: self.configure(fg_color=hover))
+            self.bind('<Leave>', lambda e: self.configure(text_color=base))
 
 class Slider(ctk.CTkSlider):
     def __init__(self, root, command, type, row, column, columnspan, sticky):
@@ -106,24 +123,25 @@ class Tray(ctk.CTk):
     def create_widgets(self):
         Slider(self, self.volume, 'volume', 0, 0, 2, 'nsew')
         Slider(self, self.brightness, 'brightness', 1, 0, 2, 'nsew')
-        Button(self, '   ', self.wifi, 2, 0, 1, 'nsew')
-        Button(self, '  󰂯  ', self.bluetooth, 2, 1, 1, 'nsew')
-        Button(self, '  󰐥  ', self.reboot, 3, 0, 1, 'nsew')
-        Button(self, '    ', self.theme, 3, 1, 1, 'nsew')
-        Button(self, 'Focus Mode', self.focus_mode, 4, 0, 2, 'nsew')
+        Button(self, '   ', 'wifi', self.wifi, 2, 0, 1, 'nsew')
+        Button(self, '  󰂯  ', 'bluetooth', self.bluetooth, 2, 1, 1, 'nsew')
+        Button(self, '  󰐥  ', 'power', self.reboot, 3, 0, 1, 'nsew')
+        Button(self, '    ', 'theme', self.theme, 3, 1, 1, 'nsew')
+        Button(self, 'Focus Mode', 'focus', self.focus_mode, 4, 0, 2, 'nsew')
 
     def focus_mode(self):
         print('focus mode')
+        exit()
 
     def wifi(self):
         home = os.path.expanduser('~')
         file = home + '/.config/status/wifi'
         if os.path.exists(file):
             os.remove(file)
-            os.system('nmcli radio wifi off')
+            os.system('nmcli radio wifi off > /tmp/wifi.log')
         else:
             open(file, 'w').close()
-            os.system('nmcli radio wifi on')
+            os.system('nmcli radio wifi on > /tmp/wifi.log')
         exit()
 
     def bluetooth(self):
@@ -131,10 +149,10 @@ class Tray(ctk.CTk):
         file = home + '/.config/status/bluetooth'
         if os.path.exists(file):
             os.remove(file)
-            os.system('bluetoothctl power off')
+            os.system('bluetoothctl power off > /tmp/bluetooth.log')
         else:
             open(file, 'w').close()
-            os.system('bluetoothctl power on')
+            os.system('bluetoothctl power on > /tmp/bluetooth.log')
         exit()
 
     def reboot(self):
@@ -170,12 +188,6 @@ def theme(theme):
                 accent = re.search(r'#[0-9A-Fa-f]{6}', line).group(0)
             elif line.startswith('hover'):
                 hover = re.search(r'#[0-9A-Fa-f]{6}', line).group(0)
-
-
-# default colors
-base = '#262940'
-accent = '#4D5382'
-hover = '#C6CAED'
 
 theme('theme/active.theme')
 Tray()
