@@ -13,11 +13,13 @@ echo "Checking for required packages..."
 # Iterate through each line of the dependencies.txt file
 # and check if the package is installed with check-dependency <command> <package>
 while read -r line; do
-    command=$(echo $line | awk '{print $1}')
-    package=$(echo $line | awk '{print $2}')
+    command=$(echo $line | awk -F ',' '{print $1}')
+    package=$(echo $line | awk -F ',' '{print $2}')
 
-    if [[ check-dependency $command $package -eq 1 ]]; then
-        echo "The package $package could not be installed. Please install it before continuing."
+    check-dependency $command $package
+
+    if [[ $? -eq 1 ]]; then
+        echo "The command $command from package $package could not be installed. Please install it before continuing."
         exit 1
     fi
 

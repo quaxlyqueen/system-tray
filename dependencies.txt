@@ -1,15 +1,11 @@
 python,python
-
 i3,i3-wm
 i3blocks,i3blocks
 nvim,neovim
 rofi,rofi
 alacritty,alacritty
-
 nmcli,networkmanager
 bluetoothctl,bluez-utils
-
 pulseaudio,pulseaudio
 pamixer,pamixer
-
 brightnessctl,brightnessctl
