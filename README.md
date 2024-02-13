@@ -2,9 +2,15 @@
 A system tray written in Python for the GUI.
 
 # Installation:
+Universal and cross-platform install and other utility scripts.
+`git clone https://github.com/quaxlyqueen/scripts`<br>
+`cd scripts`<br>
+`sudo ./install`<br><br>
+
+The system tray itself.
 `git clone https://github.com/quaxlyqueen/system-tray`<br>
 `cd system-tray`<br>
-`sudo ./install`<br>
+`sudo inst`<br>
 
 # Uninstall:
 `sudo ./uninstall`<br>
