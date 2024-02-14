@@ -1,0 +1,50 @@
+#!/bin/zsh
+
+# This script formats the output from `iwctl` to the following:
+#               "  Casa           󰤨 "
+#               "   Obsidian       󰤥 "
+#               "   eduroam        󰤢 "
+#               "   @slcc          󰤟 "
+
+format_name() {
+    NAME=$1
+
+    # If the length of the network name is less than 15, add spaces to the end
+    if [[ ${#NAME} -lt 15 ]]; then
+        echo "$NAME$(printf ' %.0s' {1..$((15-${#NAME}))})"
+
+    elif [[ ${#NAME} -gt 15 ]]; then
+        echo ${NAME:0:15}
+    fi
+}
+
+get_connected_network() {
+    # Get the connected network name
+    CONNECTED=$(iwctl station wlan0 show | grep -E "Connected network" | awk '{print $3}')
+
+    # Get the connection strength in Kbit/s
+    RX=$(iwctl station wlan0 show | grep -E "Rx" | awk '{print $2}')
+    TX=$(iwctl station wlan0 show | grep -E "Tx" | awk '{print $2}')
+
+    # Convert to MB/s
+    RX=$((($RX / 1000) * 0.125))
+    TX=$((($TX / 1000) * 0.125))
+
+    # Remove every character after the first decimal
+    RX=${RX%.*}
+    TX=${TX%.*}
+
+    # Need to dynamically insert spaces to keep the length of the string constant
+
+    echo "  $(format_name $CONNECTED) $(./get-network-strength $RX $TX)"
+}
+
+# Get the list of unconnected networks
+UNCONNECTED=$(iwctl station wlan0 get-networks | grep "psk" | awk '{print $1}')
+
+# Remove new lines and format to be comma separated, then remove the last comma and the leading comma if there is one
+UNCONNECTED=$(echo $UNCONNECTED | tr '\n' ',' | sed 's/,$//')
+
+echo $UNCONNECTED
+
+#get_connected_network
