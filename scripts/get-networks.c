@@ -11,7 +11,6 @@ struct Network {
 typedef struct List {
     struct Network network;
     struct List * next;
-    struct List * prev;
 } List;
 
 char * get_signal_strength(int rx, int tx) {
@@ -28,31 +27,28 @@ char * get_signal_strength(int rx, int tx) {
 }
 
 char * format_networks(struct Network n) {
-    if(n.name == NULL) {
-        return NULL;
+    if(n.connected == NULL) {
+        n.connected = " ";
     }
 
     if(n.strength == NULL) {
         n.strength = "󰤭";
     }
 
-    if(n.connected == NULL) {
-        n.connected = " ";
+    int len = 15 - strlen(n.name);
+    char name [12] = "";
+    if(len <= 3) {
+        strncpy(name, n.name, 11);
+        len = 4;
+    } else {
+        strcpy(name, n.name);
     }
 
-    int len = 15 - strlen(n.name);
-    char formatted[30] = ""; 
+    char formatted[128] = ""; 
 
     strcat(formatted, n.connected);
     strcat(formatted, "   ");
-    strcat(formatted, n.name);
-
-    if(len < 3) {
-        // Truncate the name (4 characters for connection status and spacing, 15 for the name truncated to 12)
-        while(strlen(formatted) > 16) {
-            formatted[strlen(formatted) - 1] = '\0';
-        }
-    }
+    strcat(formatted, name);
 
     for (int i = 0; i < len; i++) {
         strcat(formatted, " ");
@@ -65,11 +61,37 @@ char * format_networks(struct Network n) {
     return formatted_ptr;
 }
 
-struct Network get_connected_network() {
-    system("iwctl station wlan0 show | grep 'Connected network' | awk '{print $3}' > /tmp/connected.network");
-    system("iwctl station wlan0 show | grep 'Rx' | awk '{print $2}' >> /tmp/connected.network");
-    system("iwctl station wlan0 show | grep 'Tx' | awk '{print $2}' >> /tmp/connected.network");
+int correct_file() {
+    FILE *originalFile = fopen("/tmp/available.network", "r");
+    FILE *newFile = fopen("/tmp/temp.txt", "w");
 
+    if (originalFile == NULL || newFile == NULL) {
+        return 1;
+    }
+
+    // Skip the first line
+    char buffer[1024];
+    if (fgets(buffer, sizeof(buffer), originalFile) == NULL) {
+        return 1;
+    }
+
+    // Copy the rest of the file
+    while (fgets(buffer, sizeof(buffer), originalFile) != NULL) {
+        fputs(buffer, newFile);
+    }
+
+    fclose(originalFile);
+    fclose(newFile);
+
+    // Rename the new file to overwrite the original file
+    if (rename("/tmp/temp.txt", "/tmp/available.network") != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+struct Network get_connected_network() {
     struct Network n = {
         .connected = NULL,
         .name = NULL,
@@ -78,6 +100,7 @@ struct Network get_connected_network() {
 
     FILE * file = fopen("/tmp/connected.network", "r");
     if (file == NULL) {
+        n.strength = "󰤯";
         return n;
     }
 
@@ -102,8 +125,6 @@ struct Network get_connected_network() {
         }
     }
 
-    fclose(file);
-
     n.strength = get_signal_strength(rx, tx);
 
     return n;
@@ -114,7 +135,6 @@ struct List get_networks() {
     struct List * current = head;
     struct List * prev = NULL;
 
-    system("iwctl station wlan0 get-networks | grep psk | awk '{print $1}' > /tmp/available.network");
     FILE * file = fopen("/tmp/available.network", "r");
 
     if (file == NULL) {
@@ -127,10 +147,6 @@ struct List get_networks() {
     char * name;
 
     while ((read = getline(&line, &len, file)) != -1) {
-        if(strcmp(line, "\n") == 0) {
-            continue;
-        }
-
         struct Network n = {
             .connected = NULL,
             .name = NULL,
@@ -142,13 +158,9 @@ struct List get_networks() {
 
         current->network = n;
         current->next = malloc(sizeof(struct List));
-        current->prev = prev;
 
-        prev = current;
         current = current->next;
     }
-
-    fclose(file);
 
     return * head;
 }
@@ -161,10 +173,60 @@ void print(struct List * head) {
     }
 }
 
-int main() {
+void setup_files() {
+    // Create and populate the /tmp/connected.network file with appropriate information
+    system("iwctl station wlan0 show | grep 'Connected network' | awk '{print $3}' > /tmp/connected.network");
+    system("iwctl station wlan0 show | grep 'Rx' | awk '{print $2}' >> /tmp/connected.network");
+    system("iwctl station wlan0 show | grep 'Tx' | awk '{print $2}' >> /tmp/connected.network");
+
+    // Create and populate the /tmp/available.network file with appropriate information
+    system("iwctl station wlan0 get-networks | grep psk | awk '{print $1}' > /tmp/available.network");
+
+    correct_file();
+}
+
+int is_connected(struct Network n) {
+    if(n.name == NULL) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int main(int argc, char * argv[]) {
+    setup_files();
     struct Network conn_network = get_connected_network();
-    printf("%s\n", format_networks(conn_network));
     struct List avail_networks = get_networks();
-    print(&avail_networks);
+    int connected = is_connected(conn_network);
+
+    if(argc > 1) {
+        if(strcmp(argv[1], "--connected") == 0 || strcmp(argv[1], "-c") == 0) {
+            printf("%s\n", (connected == 0) ? format_networks(conn_network) : "");
+        } else if(strcmp(argv[1], "--connected-strength") == 0 || strcmp(argv[1], "-cs") == 0) {
+            printf("%s\n", conn_network.strength);
+        } else if(strcmp(argv[1], "--available") == 0 || strcmp(argv[1], "-a") == 0) {
+            print(&avail_networks);
+        } else if(strcmp(argv[1], "--all") == 0 || strcmp(argv[1], "-l") == 0) {
+            printf("%s\n", (connected == 0) ? format_networks(conn_network) : "");
+
+            print(&avail_networks);
+        } else if(strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
+            printf("Usage: get-networks [OPTION]\n");
+            printf("Prints the connected network and available networks.\n\n");
+            printf("  -c, --connected               print the connected network\n");
+            printf("  -cs, --connected-strength     print the connected network's signal strength\n");
+            printf("  -a, --available               print the available networks\n");
+            printf("  -l, --all                     print the connected and available networks\n");
+            printf("  -h, --help                    display this help and exit\n");
+            printf("  -v, --version                 output version information and exit\n");
+        } else if(strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
+            printf("get-networks 0.1\n");
+        }
+    } else {
+        printf("%s\n", (connected == 0) ? format_networks(conn_network) : "");
+
+        print(&avail_networks);
+    }
+
     return 0;
 }
