@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 struct Network {
     char * connected;
@@ -32,6 +35,7 @@ char * format_networks(struct Network n) {
     }
 
     if(n.strength == NULL) {
+        printf("%s n.strength is NULL\n", n.name);
         n.strength = "󰤭";
     }
 
@@ -100,7 +104,6 @@ struct Network get_connected_network() {
 
     FILE * file = fopen("/tmp/connected.network", "r");
     if (file == NULL) {
-        n.strength = "󰤯";
         return n;
     }
 
@@ -121,11 +124,15 @@ struct Network get_connected_network() {
         } else if (tx == -1) {
             tx = atoi(line);
         } else {
+            n.strength = get_signal_strength(rx, tx);
+            fclose(file);
+
             return n;
         }
     }
 
     n.strength = get_signal_strength(rx, tx);
+    fclose(file);
 
     return n;
 }
@@ -153,6 +160,11 @@ struct List get_networks() {
             .strength = NULL
         };
 
+        // Trim newline character from the end of the line
+        if (line[read - 1] == '\n') {
+            line[read - 1] = '\0';
+        }
+
         n.name = malloc(strlen(line) + 1);
         strncpy(n.name, line, strlen(line) - 1);
 
@@ -162,13 +174,15 @@ struct List get_networks() {
         current = current->next;
     }
 
+    fclose(file);
+
     return * head;
 }
 
-void print(struct List * head) {
+void traverse(struct List * head, FILE * file) {
     struct List * current = head;
     while (current->next != NULL) {
-        printf("%s\n", format_networks(current->network));
+        fprintf(file, "%s\n", format_networks(current->network));
         current = current->next;
     }
 }
@@ -193,23 +207,78 @@ int is_connected(struct Network n) {
     return 0;
 }
 
+void daemonize() {
+    printf("daemonizing...\n");
+    pid_t pid, sid;
+
+    pid = fork();
+    if (pid < 0) {
+        printf("daemonizing failed! pid: %d\n", pid);
+        exit(EXIT_FAILURE);
+    }
+
+    if ((chdir("/")) < 0) {
+        printf("daemonizing failed! dir not changed.\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void record() {
+    setup_files();
+    struct Network conn_network = get_connected_network();
+    struct List avail_networks = get_networks();
+    int connected = is_connected(conn_network);
+
+    FILE * file = fopen("/tmp/networks.txt", "w");
+    if(file == NULL) {
+        printf("Error opening /tmp/networks.txt!\n");
+    }
+
+    conn_network = get_connected_network();
+    avail_networks = get_networks();
+    connected = is_connected(conn_network);
+
+    fprintf(file, "%s\n", (connected == 0) ? format_networks(conn_network) : "");
+    traverse(&avail_networks, file);
+
+    fclose(file);
+}
+
+// TODO: Add a function to daemonize the process and update the network information every 5 seconds
 int main(int argc, char * argv[]) {
     setup_files();
     struct Network conn_network = get_connected_network();
     struct List avail_networks = get_networks();
     int connected = is_connected(conn_network);
 
-    if(argc > 1) {
-        if(strcmp(argv[1], "--connected") == 0 || strcmp(argv[1], "-c") == 0) {
-            printf("%s\n", (connected == 0) ? format_networks(conn_network) : "");
-        } else if(strcmp(argv[1], "--connected-strength") == 0 || strcmp(argv[1], "-cs") == 0) {
-            printf("%s\n", conn_network.strength);
-        } else if(strcmp(argv[1], "--available") == 0 || strcmp(argv[1], "-a") == 0) {
-            print(&avail_networks);
-        } else if(strcmp(argv[1], "--all") == 0 || strcmp(argv[1], "-l") == 0) {
-            printf("%s\n", (connected == 0) ? format_networks(conn_network) : "");
+    FILE * file = fopen("/tmp/networks.txt", "w");
+    if(file == NULL) {
+        printf("Error opening /tmp/networks.txt!\n");
+    }
 
-            print(&avail_networks);
+    if(argc > 1) {
+        if(strcmp(argv[1], "--daemonize") == 0 || strcmp(argv[1], "-d") == 0) {
+            daemonize();
+            fclose(file);
+
+            while(1) {
+                record();
+
+                sleep(15);
+            }
+
+        } else if(strcmp(argv[1], "--connected") == 0 || strcmp(argv[1], "-c") == 0) {
+            fprintf(file, "%s\n", (connected == 0) ? format_networks(conn_network) : "");
+
+        } else if(strcmp(argv[1], "--connected-strength") == 0 || strcmp(argv[1], "-cs") == 0) {
+            fprintf(file, "%s\n", (connected == 0) ? conn_network.strength : "");
+
+        } else if(strcmp(argv[1], "--available") == 0 || strcmp(argv[1], "-a") == 0) {
+            traverse(&avail_networks, file);
+        } else if(strcmp(argv[1], "--all") == 0 || strcmp(argv[1], "-l") == 0) {
+            fprintf(file, "%s\n", (connected == 0) ? format_networks(conn_network) : "");
+
+            traverse(&avail_networks, file);
         } else if(strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
             printf("Usage: get-networks [OPTION]\n");
             printf("Prints the connected network and available networks.\n\n");
@@ -223,10 +292,11 @@ int main(int argc, char * argv[]) {
             printf("get-networks 0.1\n");
         }
     } else {
-        printf("%s\n", (connected == 0) ? format_networks(conn_network) : "");
+        fprintf(file, "%s\n", (connected == 0) ? format_networks(conn_network) : "");
 
-        print(&avail_networks);
+        traverse(&avail_networks, file);
     }
 
+    fclose(file);
     return 0;
 }
