@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <ctype.h>
+#define MAX_NAME_WIDTH 10
 
 struct Network {
     char * connected;
@@ -29,40 +31,57 @@ char * get_signal_strength(int rx, int tx) {
     return "󰤟";
 }
 
+int is_valid_char(char c) {
+    return isalnum(c);
+}
+
 char * format_networks(struct Network n) {
+    int i = 1;
+    char formatted[128] = "";
+
     if(n.connected == NULL) {
         n.connected = " ";
+        strcpy(formatted, n.connected);
+    } else {
+        n.connected = "";
+        i = 3;
+        strcpy(formatted, n.connected);
     }
 
     if(n.strength == NULL) {
-        printf("%s n.strength is NULL\n", n.name);
-        n.strength = "󰤭";
+        n.strength = "󰤮";
     }
 
-    int len = 15 - strlen(n.name);
-    char name [12] = "";
-    if(len <= 3) {
-        strncpy(name, n.name, 11);
-        len = 4;
-    } else {
-        strcpy(name, n.name);
+    int counter = 0;
+    for(; i < 25; i++) {
+        if(i == 3 && strcmp(n.connected, "") == 0) {
+            formatted[i] = ' ';
+            formatted[i + 1] = ' ';
+            formatted[i + 2] = ' ';
+
+            i += 2;
+            continue;
+        }
+
+        if(i > 3 && i < 16 && counter < 11 && is_valid_char(n.name[counter])) {
+            formatted[i] = n.name[counter];
+            counter++;
+
+        } else formatted[i] = ' ';
     }
 
-    char formatted[128] = ""; 
-
-    strcat(formatted, n.connected);
-    strcat(formatted, "   ");
-    strcat(formatted, name);
-
-    for (int i = 0; i < len; i++) {
-        strcat(formatted, " ");
+    if(strcmp(n.connected, "") == 0) {
+        formatted[i] = ' ';
+        formatted[i + 1] = ' ';
     }
 
     strcat(formatted, n.strength);
+    printf("%s\n", formatted);
+
     char * formatted_ptr = malloc(strlen(formatted) + 1);
     strcpy(formatted_ptr, formatted);
 
-    return formatted_ptr;
+    return formatted_ptr; 
 }
 
 int correct_file() {
@@ -116,7 +135,7 @@ struct Network get_connected_network() {
 
     while ((read = getline(&line, &len, file)) != -1) {
         if (n.name == NULL) {
-            n.connected = "";
+            n.connected = "";
             n.name = malloc(strlen(line) + 1);
             strncpy(n.name, line, strlen(line) - 1);
         } else if (rx == -1) {
@@ -140,12 +159,12 @@ struct Network get_connected_network() {
 struct List get_networks() {
     struct List * head = malloc(sizeof(struct List));
     struct List * current = head;
-    struct List * prev = NULL;
 
     FILE * file = fopen("/tmp/available.network", "r");
 
     if (file == NULL) {
-        return * prev;
+        fclose(file);
+        return * head;
     }
 
     char * line = NULL;
@@ -165,8 +184,8 @@ struct List get_networks() {
             line[read - 1] = '\0';
         }
 
-        n.name = malloc(strlen(line) + 1);
-        strncpy(n.name, line, strlen(line) - 1);
+        n.name = malloc(strlen(line));
+        strncpy(n.name, line, strlen(line));
 
         current->network = n;
         current->next = malloc(sizeof(struct List));
@@ -194,7 +213,7 @@ void setup_files() {
     system("iwctl station wlan0 show | grep 'Tx' | awk '{print $2}' >> /tmp/connected.network");
 
     // Create and populate the /tmp/available.network file with appropriate information
-    system("iwctl station wlan0 get-networks | grep psk | awk '{print $1}' > /tmp/available.network");
+    system("iwctl station wlan0 get-networks | grep -e psk -e open -e 8021x | awk '{print $1}' > /tmp/available.network");
 
     correct_file();
 }
@@ -244,7 +263,6 @@ void record() {
     fclose(file);
 }
 
-// TODO: Add a function to daemonize the process and update the network information every 5 seconds
 int main(int argc, char * argv[]) {
     setup_files();
     struct Network conn_network = get_connected_network();
@@ -256,7 +274,7 @@ int main(int argc, char * argv[]) {
         printf("Error opening /tmp/networks.txt!\n");
     }
 
-    if(argc > 1) {
+    if(argc == 2) {
         if(strcmp(argv[1], "--daemonize") == 0 || strcmp(argv[1], "-d") == 0) {
             daemonize();
             fclose(file);
@@ -275,26 +293,31 @@ int main(int argc, char * argv[]) {
 
         } else if(strcmp(argv[1], "--available") == 0 || strcmp(argv[1], "-a") == 0) {
             traverse(&avail_networks, file);
+
         } else if(strcmp(argv[1], "--all") == 0 || strcmp(argv[1], "-l") == 0) {
             fprintf(file, "%s\n", (connected == 0) ? format_networks(conn_network) : "");
-
             traverse(&avail_networks, file);
+
         } else if(strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
             printf("Usage: get-networks [OPTION]\n");
             printf("Prints the connected network and available networks.\n\n");
+            printf("Options:\n");
+            printf("  -d, --daemonize               daemonize the process and update the network information every 5 seconds\n");
             printf("  -c, --connected               print the connected network\n");
             printf("  -cs, --connected-strength     print the connected network's signal strength\n");
             printf("  -a, --available               print the available networks\n");
             printf("  -l, --all                     print the connected and available networks\n");
             printf("  -h, --help                    display this help and exit\n");
             printf("  -v, --version                 output version information and exit\n");
+
         } else if(strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
             printf("get-networks 0.1\n");
+
         }
     } else {
         fprintf(file, "%s\n", (connected == 0) ? format_networks(conn_network) : "");
-
         traverse(&avail_networks, file);
+
     }
 
     fclose(file);
