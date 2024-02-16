@@ -2,43 +2,13 @@ import customtkinter as ctk
 import re
 import os
 
+from wifi import Wifi
+from button import Button
+
 # default colors
 base = '#262940'
 accent = '#4D5382'
 hover = '#C6CAED'
-
-class Button(ctk.CTkButton):
-    def __init__(self, root, text, type, command, row, column, columnspan, sticky):
-        super().__init__(
-                root,
-                text = text,
-                fg_color = base,
-                text_color = hover,
-                font=('Lato', 35),
-                corner_radius = 20,
-                border_width = 10,
-                bg_color = accent,
-                border_color = accent,
-                command = command
-            )
-
-        self.grid(row=row, column=column, ipadx=10, ipady=10, columnspan=columnspan, sticky=sticky)
-        self.set_value(type)
-
-    def set_value(self, type):
-        home = os.path.expanduser('~')
-        if os.path.exists(home + '/.config/status/' + type):
-            self.bind('<Enter>', lambda e: self.configure(fg_color=hover))
-            self.bind('<Enter>', lambda e: self.configure(text_color=base))
-            self.bind('<Leave>', lambda e: self.configure(fg_color=base))
-            self.bind('<Leave>', lambda e: self.configure(text_color=hover))
-        else:
-            self.configure(fg_color = hover)
-            self.configure(text_color = base)
-            self.bind('<Enter>', lambda e: self.configure(fg_color=base))
-            self.bind('<Enter>', lambda e: self.configure(text_color=hover))
-            self.bind('<Leave>', lambda e: self.configure(fg_color=hover))
-            self.bind('<Leave>', lambda e: self.configure(text_color=base))
 
 class Slider(ctk.CTkSlider):
     def __init__(self, root, command, type, row, column, columnspan, sticky):
@@ -134,15 +104,12 @@ class Tray(ctk.CTk):
         exit()
 
     def wifi(self):
-        home = os.path.expanduser('~')
-        file = home + '/.config/status/wifi'
-        if os.path.exists(file):
-            os.remove(file)
-            os.system('nmcli radio wifi off > /tmp/wifi.log')
-        else:
-            open(file, 'w').close()
-            os.system('nmcli radio wifi on > /tmp/wifi.log')
-        exit()
+        self.withdraw()
+        wifi_window = Wifi(self.on_wifi_window_close, base, accent, hover)
+        wifi_window.mainloop()
+
+    def on_wifi_window_close(self):
+        self.deiconify()  # Show the Tray window again
 
     def bluetooth(self):
         home = os.path.expanduser('~')

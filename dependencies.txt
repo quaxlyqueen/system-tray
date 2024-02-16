@@ -1,3 +1,4 @@
+gcc,gcc
 python,python
 i3,i3-wm
 i3blocks,i3blocks

@@ -44,13 +44,13 @@ char * format_networks(struct Network n) {
         strcpy(formatted, n.connected);
     }
 
+    // TODO: Need to get the signal strength of networks that are not connected
     if(n.strength == NULL) {
-        // TODO: Need to get the signal strength of networks that are not connected
         n.strength = get_signal_strength(0, 0);
     }
 
     int counter = 0;
-    for(; i < 25; i++) {
+    for(; i < 40; i++) {
         if(i == 3 && strcmp(n.connected, "") == 0) {
             formatted[i] = ' ';
             formatted[i + 1] = ' ';
