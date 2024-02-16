@@ -1,0 +1,15 @@
+#!/bin/zsh
+
+# This script carries out special installation instructions beyond the current capabilities of the `inst` command.
+# It is ran by the `inst` command, if this file exists in the package directory.
+
+# Compile and install the net-info command
+sudo gcc -o /usr/local/bin/net-info src/net-info.c
+echo "net-info installed to /usr/local/bin/net-info"
+echo "Run 'net-info -h' for usage information."
+
+# Install net-info as a daemon
+sudo echo "net-info -d" > /etc/rc.local
+echo "net-info added to /etc/rc.local"
+echo "net-info will run on boot."
+echo "Run 'net-info -d' to start net-info now."
