@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import os
 
 from button import Button
 
@@ -29,6 +30,7 @@ class Wifi(ctk.CTk):
         self.mainloop()
 
     def read_networks(self):
+        os.system('net-info -l')
         networks = []
 
         # Print each line in the file
