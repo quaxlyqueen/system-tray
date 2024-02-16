@@ -80,16 +80,20 @@ char * format_networks(struct Network n) {
 }
 
 int correct_file() {
-    FILE *originalFile = fopen("/tmp/available.network", "r");
-    FILE *newFile = fopen("/tmp/temp.txt", "w");
+    FILE * originalFile = fopen("/tmp/available.network", "r");
+    FILE * newFile = fopen("/tmp/temp.txt", "w");
 
     if (originalFile == NULL || newFile == NULL) {
+        fclose(originalFile);
+        fclose(newFile);
         return 1;
     }
 
     // Skip the first line
     char buffer[1024];
     if (fgets(buffer, sizeof(buffer), originalFile) == NULL) {
+        fclose(originalFile);
+        fclose(newFile);
         return 1;
     }
 
@@ -118,6 +122,7 @@ struct Network get_connected_network() {
 
     FILE * file = fopen("/tmp/connected.network", "r");
     if (file == NULL) {
+        fclose(file);
         return n;
     }
 
@@ -231,6 +236,15 @@ void daemonize() {
         exit(EXIT_FAILURE);
     }
 
+    if (pid > 0) {
+        if ((chdir("/")) < 0) {
+            printf("daemonizing failed! dir not changed.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        exit(EXIT_SUCCESS);
+    }
+
     if ((chdir("/")) < 0) {
         printf("daemonizing failed! dir not changed.\n");
         exit(EXIT_FAILURE);
@@ -246,6 +260,8 @@ void record() {
     FILE * file = fopen("/tmp/networks.txt", "w");
     if(file == NULL) {
         printf("Error opening /tmp/networks.txt!\n");
+        fclose(file);
+        return;
     }
 
     conn_network = get_connected_network();
