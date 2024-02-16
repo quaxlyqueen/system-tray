@@ -28,11 +28,7 @@ char * get_signal_strength(int rx, int tx) {
     } else if (rx > 10 && tx > 5) {
         return "󰤟";
     }
-    return "󰤟";
-}
-
-int is_valid_char(char c) {
-    return isalnum(c);
+    return "󰤮";
 }
 
 char * format_networks(struct Network n) {
@@ -49,7 +45,8 @@ char * format_networks(struct Network n) {
     }
 
     if(n.strength == NULL) {
-        n.strength = "󰤮";
+        // TODO: Need to get the signal strength of networks that are not connected
+        n.strength = get_signal_strength(0, 0);
     }
 
     int counter = 0;
@@ -63,7 +60,7 @@ char * format_networks(struct Network n) {
             continue;
         }
 
-        if(i > 3 && i < 16 && counter < 11 && is_valid_char(n.name[counter])) {
+        if(i > 3 && i < 16 && counter < 11 && isalnum(n.name[counter])) {
             formatted[i] = n.name[counter];
             counter++;
 
@@ -74,9 +71,7 @@ char * format_networks(struct Network n) {
         formatted[i] = ' ';
         formatted[i + 1] = ' ';
     }
-
     strcat(formatted, n.strength);
-    printf("%s\n", formatted);
 
     char * formatted_ptr = malloc(strlen(formatted) + 1);
     strcpy(formatted_ptr, formatted);
@@ -219,7 +214,7 @@ void setup_files() {
 }
 
 int is_connected(struct Network n) {
-    if(n.name == NULL) {
+    if(n.connected == NULL) {
         return 1;
     }
 
@@ -282,14 +277,14 @@ int main(int argc, char * argv[]) {
             while(1) {
                 record();
 
-                sleep(15);
+                sleep(30);
             }
 
         } else if(strcmp(argv[1], "--connected") == 0 || strcmp(argv[1], "-c") == 0) {
             fprintf(file, "%s\n", (connected == 0) ? format_networks(conn_network) : "");
 
         } else if(strcmp(argv[1], "--connected-strength") == 0 || strcmp(argv[1], "-cs") == 0) {
-            fprintf(file, "%s\n", (connected == 0) ? conn_network.strength : "");
+            fprintf(file, "%s\n", (connected == 0) ? conn_network.strength : "󰤮");
 
         } else if(strcmp(argv[1], "--available") == 0 || strcmp(argv[1], "-a") == 0) {
             traverse(&avail_networks, file);
