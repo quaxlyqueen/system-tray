@@ -3,6 +3,7 @@ import re
 import os
 
 from wifi import Wifi
+from power import Power
 from button import Button
 
 # default colors
@@ -95,7 +96,7 @@ class Tray(ctk.CTk):
         Slider(self, self.brightness, 'brightness', 1, 0, 2, 'nsew')
         Button(self, '   ', 'wifi', self.wifi, 2, 0, 1, 'nsew')
         Button(self, '  󰂯  ', 'bluetooth', self.bluetooth, 2, 1, 1, 'nsew')
-        Button(self, '  󰐥  ', 'power', self.reboot, 3, 0, 1, 'nsew')
+        Button(self, '  󰐥  ', 'power', self.power, 3, 0, 1, 'nsew')
         Button(self, '    ', 'theme', self.theme, 3, 1, 1, 'nsew')
         Button(self, 'Focus Mode', 'focus', self.focus_mode, 4, 0, 2, 'nsew')
 
@@ -105,11 +106,8 @@ class Tray(ctk.CTk):
 
     def wifi(self):
         self.withdraw()
-        wifi_window = Wifi(self.on_wifi_window_close, base, accent, hover)
+        wifi_window = Wifi(self.on_window_close, base, accent, hover)
         wifi_window.mainloop()
-
-    def on_wifi_window_close(self):
-        self.deiconify()  # Show the Tray window again
 
     def bluetooth(self):
         home = os.path.expanduser('~')
@@ -122,8 +120,13 @@ class Tray(ctk.CTk):
             os.system('bluetoothctl power on > /tmp/bluetooth.log')
         exit()
 
-    def reboot(self):
-        os.system('systemctl reboot')
+    def power(self):
+        self.withdraw()
+        power_window = Power(self.on_window_close, base, accent, hover)
+        power_window.mainloop()
+
+    def on_window_close(self):
+        self.deiconify()
 
     def theme(self):
         os.system('set-theme')
