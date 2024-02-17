@@ -8,6 +8,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 sudo rm /usr/local/bin/tray
+sudo rm /usr/local/bin/net-info
 
 cd ..
 sudo rm -rf system-tray
