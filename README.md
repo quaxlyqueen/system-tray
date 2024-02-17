@@ -17,8 +17,8 @@ The system tray itself.
 
 # TODO:
 INTERACTION:
-- [ ] Wi-Fi toggle
-    - [ ] Wi-Fi sub-menu
+- [x] Wi-Fi toggle
+    - [x] Wi-Fi sub-menu
 - [ ] Bluetooth toggle
     - [ ] Bluetooth toggle
 - [ ] Airplane toggle
@@ -33,7 +33,7 @@ INTERACTION:
 FUNCTIONALITY:
 - [ ] Wi-Fi
     - [x] On/Off
-    - [ ] Change connection
+    - [x] Change connection
     - [ ] Open in Settings (TBD)
 - [ ] Bluetooth
     - [x] On/Off
