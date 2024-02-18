@@ -24,35 +24,11 @@ INTERACTION:
 - [ ] Airplane toggle
 - [x] Brightness slider
 - [x] Volume slider
-- [ ] Power dropdown
-    - [ ] Shutdown
+- [x] Power dropdown
+    - [x] Shutdown
     - [x] Restart
-    - [ ] Sign Out
+    - [x] Sign Out
 - [ ] Focus mode (TBD)
-
-FUNCTIONALITY:
-- [ ] Wi-Fi
-    - [x] On/Off
-    - [x] Change connection
-    - [ ] Open in Settings (TBD)
-- [ ] Bluetooth
-    - [x] On/Off
-    - [ ] Change connection
-    - [ ] Open in Settings (TBD)
-- [ ] Airplane mode
-    - [ ] On/Off
-- [x] Brightness
-    - [x] Click to set
-    - [x] Drag to set
-    - [x] Dynamically updates visual
-- [x] Volume
-    - [x] Click to set
-    - [x] Drag to set
-    - [x] Dynamically updates visual
-- [ ] Power
-    - [ ] Shutdown button
-    - [x] Restart button
-    - [ ] Sign Out button
 
 GUI:
 - [x] Add icon support

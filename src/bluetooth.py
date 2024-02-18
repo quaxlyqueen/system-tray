@@ -9,8 +9,8 @@ base = '#262940'
 accent = '#4D5382'
 hover = '#C6CAED'
 
-class Wifi(ctk.CTk):
-    networks = []
+class Bluetooth(ctk.CTk):
+    devices = []
     def __init__(self, callback, base, accent, hover):
         super().__init__()
         base = base
@@ -24,25 +24,25 @@ class Wifi(ctk.CTk):
         self.set_size()
         self.resizable(False, False)
 
-        self.read_networks()
+        self.bluetooth()
         
         self.create_layout(10)
         self.create_widgets(10)
 
         self.mainloop()
 
-    def read_networks(self):
-        os.system('net-info -l')
+    def read_devices(self):
+        os.system('bt-info -l')
 
         # Print each line in the file
-        with open('/tmp/networks.txt', 'r') as f:
+        with open('/tmp/devices.txt', 'r') as f:
             for line in f:
 
                 # If the line is empty, skip it
                 if line == '\n':
                     continue
 
-                self.networks.append(line[:-1])
+                self.devices.append(line[:-1])
         
     # Overlay on top of the Tray.
     def set_size(self):
@@ -67,28 +67,27 @@ class Wifi(ctk.CTk):
     # Create the display and button widgets
     def create_widgets(self, n):
         for i in range(n):
-            # If this is the first network and it has , then it is active
-            if i == 0 and self.networks[i].startswith(''):
-                b = Button(self, self.networks[i][:-1] + ' ', 'active', partial(self.connect, i, 1), i, 0, 2, 'nsew')
+            # If this is the first device and it has , then it is active
+            if i == 0 and self.devices[i].startswith(''):
+                b = Button(self, self.devices[i][:-1] + ' ', 'active', partial(self.connect, i, 1), i, 0, 2, 'nsew')
 
             else:
-                b = Button(self, self.networks[i] + ' ', 'inactive', partial(self.connect, i, 2), i, 0, 2, 'nsew')
+                b = Button(self, self.devices[i] + ' ', 'inactive', partial(self.connect, i, 2), i, 0, 2, 'nsew')
 
             b.grid(row=i, column=0, ipadx=2, ipady=5, columnspan=1, sticky='nsew')
             b.set_font(('Lato', 18))
             b.configure(anchor='w')
 
+    # TODO: Identify commands to connect and disconnect from a device
     def connect(self, i, active):
-
         if active == 1:
-            os.system('iwctl station wlan0 disconnect')
-            print('Disconnecting from ', self.networks[i])
+            print('Disconnecting from ', self.devices[i])
             self.withdraw()
             self.callback()
             return
 
         # Print each line in the file
-        with open('/tmp/available.network', 'r') as f:
+        with open('/tmp/available.device', 'r') as f:
             curr = 0
 
             for line in f:
@@ -98,12 +97,11 @@ class Wifi(ctk.CTk):
                     continue
 
                 if curr == i:
-                    os.system('iwctl station wlan0 connect ' + line[:-1])
-                    print('Connecting to ', self.networks[i])
+                    print('Connecting to ', self.devices[i])
                     self.withdraw()
                     self.callback()
                     return
                 
                 curr += 1
                 
-        print('No network found')
+        print('No device found')
