@@ -9,6 +9,7 @@ base = '#262940'
 accent = '#4D5382'
 hover = '#C6CAED'
 
+# Power subwindow
 class Power(ctk.CTk):
     def __init__(self, callback, base, accent, hover):
         super().__init__()
@@ -16,10 +17,12 @@ class Power(ctk.CTk):
         accent = accent
         hover = hover
 
-        self.callback = callback  # Store the callback function
+        # Store the callback function to call when the window is closed or a device is connected
+        self.callback = callback
+
+        # Set the window attributes, size, and position
         self.attributes('-type', 'splash')
         self.attributes('-topmost', True)
-
         self.set_size()
         self.resizable(False, False)
 

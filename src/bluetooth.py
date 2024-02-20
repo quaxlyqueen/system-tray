@@ -9,6 +9,7 @@ base = '#262940'
 accent = '#4D5382'
 hover = '#C6CAED'
 
+# Bluetooth subwindow
 class Bluetooth(ctk.CTk):
     devices = []
     def __init__(self, callback, base, accent, hover):
@@ -17,10 +18,12 @@ class Bluetooth(ctk.CTk):
         accent = accent
         hover = hover
 
+        # Store the callback function to call when the window is closed or a device is connected
         self.callback = callback  # Store the callback function
+
+        # Set the window attributes, size, and position
         self.attributes('-type', 'splash')
         self.attributes('-topmost', True)
-
         self.set_size()
         self.resizable(False, False)
 
